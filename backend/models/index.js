@@ -25,6 +25,7 @@ const Categoria = require('./Categoria')(sequelize);
 const Ingrediente = require('./Ingrediente')(sequelize);
 const Receta = require('./Receta')(sequelize);
 const RecetaIngrediente = require('./RecetaIngrediente')(sequelize);
+const Favorito = require('./Favorito')(sequelize);
 
 // Asociaciones
 
@@ -49,6 +50,22 @@ Ingrediente.belongsToMany(Receta, {
   otherKey: 'recetaId'
 });
 
+// Muchos a muchos entre User y Receta a través de Favorito:
+// un usuario puede favoritear muchas recetas, una receta puede ser
+// favorita de muchos usuarios distintos
+User.belongsToMany(Receta, {
+  through: Favorito,
+  foreignKey: 'userId',
+  otherKey: 'recetaId',
+  as: 'recetasFavoritas'
+});
+Receta.belongsToMany(User, {
+  through: Favorito,
+  foreignKey: 'recetaId',
+  otherKey: 'userId',
+  as: 'usuariosQueFavoritearon'
+});
+
 module.exports = {
   sequelize,
   Sequelize,
@@ -56,5 +73,6 @@ module.exports = {
   Categoria,
   Ingrediente,
   Receta,
-  RecetaIngrediente
+  RecetaIngrediente,
+  Favorito
 };

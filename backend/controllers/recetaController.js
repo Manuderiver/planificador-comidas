@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { sequelize, Receta, Categoria, Ingrediente, RecetaIngrediente } = require('../models');
+const { sequelize, Receta, Categoria, Ingrediente, RecetaIngrediente, Favorito } = require('../models');
 
 async function crear(req, res) {
 const { nombre, descripcion, categoriaId, pasos, tiempoPreparacion, porciones, imagenUrl, ingredientes } = req.body;
@@ -52,11 +52,25 @@ try {
 
 async function listar(req, res) {
 try {
-    const { categoriaId, busqueda } = req.query;
-    const where = { userId: req.user.id };
+    const { categoriaId, busqueda, misRecetas, favoritas } = req.query;
+    const where = {};
 
-    if (categoriaId) where.categoriaId = categoriaId;
-    if (busqueda) where.nombre = { [Op.iLike]: `%${busqueda}%` };
+    if (misRecetas === 'true') {
+    where.userId = req.user.id;
+    }
+    if (categoriaId) {
+    where.categoriaId = categoriaId;
+    }
+    if (busqueda) {
+    where.nombre = { [Op.iLike]: `%${busqueda}%` };
+    }
+    if (favoritas === 'true') {
+    const favoritos = await Favorito.findAll({
+        where: { userId: req.user.id },
+        attributes: ['recetaId']
+    });
+    where.id = { [Op.in]: favoritos.map(f => f.recetaId) };
+    }
 
     const recetas = await Receta.findAll({
     where,
@@ -64,7 +78,20 @@ try {
     order: [['createdAt', 'DESC']]
     });
 
-    res.status(200).json({ recetas });
+    // Para marcar cuáles de estas recetas el usuario logueado tiene como favoritas
+    const misFavoritos = await Favorito.findAll({
+    where: { userId: req.user.id },
+    attributes: ['recetaId']
+    });
+    const idsFavoritos = new Set(misFavoritos.map(f => f.recetaId));
+
+    const recetasConFavorito = recetas.map(receta => ({
+    ...receta.toJSON(),
+    esFavorita: idsFavoritos.has(receta.id),
+    esPropia: receta.userId === req.user.id
+    }));
+
+    res.status(200).json({ recetas: recetasConFavorito });
 } catch (error) {
     res.status(500).json({ error: 'Error al obtener las recetas' });
 }
@@ -79,11 +106,18 @@ try {
     if (!receta) {
     return res.status(404).json({ error: 'Receta no encontrada' });
     }
-    if (receta.userId !== req.user.id) {
-    return res.status(403).json({ error: 'No tenés permiso para ver esta receta' });
-    }
 
-    res.status(200).json({ receta });
+    const favorito = await Favorito.findOne({
+    where: { userId: req.user.id, recetaId: receta.id }
+    });
+
+    res.status(200).json({
+    receta: {
+        ...receta.toJSON(),
+        esFavorita: !!favorito,
+        esPropia: receta.userId === req.user.id
+    }
+    });
 } catch (error) {
     res.status(500).json({ error: 'Error al obtener la receta' });
 }
