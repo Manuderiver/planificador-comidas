@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 
 const JWT_SECRET = process.env.JWT_SECRET;
-
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET no está definida en las variables de entorno. La aplicación no puede iniciar de forma segura sin ella.');
 }
@@ -16,18 +16,16 @@ function generarToken(user) {
 
 function verificarToken(req, res, next) {
   const authHeader = req.headers['authorization'];
-
   if (!authHeader) {
     return res.status(401).json({ error: 'Token no proporcionado' });
   }
 
-const token = authHeader.split(' ')[1];
-
+  const token = authHeader.split(' ')[1];
   if (!token) {
     return res.status(401).json({ error: 'Formato de token inválido' });
   }
 
-try {
+  try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     next();
@@ -36,4 +34,12 @@ try {
   }
 }
 
-module.exports = { generarToken, verificarToken };
+const limitarIntentosLogin = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5,
+  message: { error: 'Demasiados intentos de inicio de sesión. Intentá de nuevo en 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+module.exports = { generarToken, verificarToken, limitarIntentosLogin };
