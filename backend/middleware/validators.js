@@ -1,4 +1,5 @@
-const { body, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator');
+const { DIAS, COMIDAS } = require('../utils/constantes');
 
 const validarRegistro = [
 body('nombre')
@@ -58,6 +59,22 @@ body('ingredientes.*.unidad')
     .withMessage('Cada ingrediente debe indicar una unidad')
 ];
 
+const validarSlotParams = [
+param('dia')
+    .isIn(DIAS)
+    .withMessage(`El día debe ser uno de: ${DIAS.join(', ')}`),
+param('comida')
+    .isIn(COMIDAS)
+    .withMessage(`La comida debe ser una de: ${COMIDAS.join(', ')}`)
+];
+
+const validarAsignarSlot = [
+...validarSlotParams,
+body('recetaId')
+    .isInt()
+    .withMessage('Debe indicar una receta válida')
+];
+
 function manejarErroresValidacion(req, res, next) {
 const errores = validationResult(req);
 if (!errores.isEmpty()) {
@@ -69,4 +86,11 @@ if (!errores.isEmpty()) {
 next();
 }
 
-module.exports = { validarRegistro, validarLogin, validarCrearReceta, manejarErroresValidacion };
+module.exports = {
+validarRegistro,
+validarLogin,
+validarCrearReceta,
+validarSlotParams,
+validarAsignarSlot,
+manejarErroresValidacion
+};

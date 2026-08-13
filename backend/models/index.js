@@ -26,6 +26,7 @@ const Ingrediente = require('./Ingrediente')(sequelize);
 const Receta = require('./Receta')(sequelize);
 const RecetaIngrediente = require('./RecetaIngrediente')(sequelize);
 const Favorito = require('./Favorito')(sequelize);
+const PlanificadorSlot = require('./PlanificadorSlot')(sequelize);
 
 // Asociaciones
 
@@ -50,9 +51,7 @@ Ingrediente.belongsToMany(Receta, {
   otherKey: 'recetaId'
 });
 
-// Muchos a muchos entre User y Receta a través de Favorito:
-// un usuario puede favoritear muchas recetas, una receta puede ser
-// favorita de muchos usuarios distintos
+// Muchos a muchos entre User y Receta a través de Favorito
 User.belongsToMany(Receta, {
   through: Favorito,
   foreignKey: 'userId',
@@ -66,6 +65,14 @@ Receta.belongsToMany(User, {
   as: 'usuariosQueFavoritearon'
 });
 
+// Un usuario tiene muchos casilleros de planificador; cada casillero
+// pertenece a un usuario y apunta a una receta
+User.hasMany(PlanificadorSlot, { foreignKey: 'userId' });
+PlanificadorSlot.belongsTo(User, { foreignKey: 'userId' });
+
+Receta.hasMany(PlanificadorSlot, { foreignKey: 'recetaId' });
+PlanificadorSlot.belongsTo(Receta, { foreignKey: 'recetaId', as: 'receta' });
+
 module.exports = {
   sequelize,
   Sequelize,
@@ -74,5 +81,6 @@ module.exports = {
   Ingrediente,
   Receta,
   RecetaIngrediente,
-  Favorito
+  Favorito,
+  PlanificadorSlot
 };

@@ -3,6 +3,7 @@ const router = express.Router();
 const authRoutes = require('./auth');
 const categoriaRoutes = require('./categorias');
 const recetaRoutes = require('./recetas');
+const planificadorRoutes = require('./planificador');
 
 // Ruta de prueba
 router.get('/health', (req, res) => {
@@ -22,6 +23,9 @@ router.use('/categorias', categoriaRoutes);
 
 // Rutas de recetas
 router.use('/recetas', recetaRoutes);
+
+// Rutas del planificador semanal
+router.use('/planificador', planificadorRoutes);
 
 // Ruta de ejemplo
 router.get('/test', (req, res) => {
