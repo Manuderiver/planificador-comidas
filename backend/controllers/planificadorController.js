@@ -1,4 +1,5 @@
-const { PlanificadorSlot, Receta, Categoria } = require('../models');
+const { Op } = require('sequelize');
+const { PlanificadorSlot, Receta, Categoria, Ingrediente } = require('../models');
 const { DIAS, COMIDAS } = require('../utils/constantes');
 
 async function obtener(req, res) {
@@ -12,8 +13,6 @@ try {
     }]
     });
 
-    // Arma la estructura completa de 7 días x 3 comidas,
-    // rellenando con null los casilleros que no tienen receta asignada
     const semana = {};
     for (const dia of DIAS) {
     semana[dia] = {};
@@ -68,4 +67,43 @@ try {
 }
 }
 
-module.exports = { obtener, asignar, quitar };
+async function listaIngredientes(req, res) {
+try {
+    const slots = await PlanificadorSlot.findAll({
+    where: { userId: req.user.id }
+    });
+
+    const recetaIds = [...new Set(slots.map(s => s.recetaId))];
+
+    if (recetaIds.length === 0) {
+    return res.status(200).json({ ingredientes: [] });
+    }
+
+    const recetas = await Receta.findAll({
+    where: { id: { [Op.in]: recetaIds } },
+    include: [{ model: Ingrediente }]
+    });
+
+    const agrupado = {};
+    for (const receta of recetas) {
+    for (const ingrediente of receta.Ingredientes) {
+        const { cantidad, unidad } = ingrediente.RecetaIngrediente;
+        const clave = `${ingrediente.nombre}__${unidad}`;
+
+        if (!agrupado[clave]) {
+        agrupado[clave] = { ingrediente: ingrediente.nombre, unidad, cantidad: 0 };
+        }
+        agrupado[clave].cantidad += cantidad;
+    }
+    }
+
+    const ingredientes = Object.values(agrupado)
+    .sort((a, b) => a.ingrediente.localeCompare(b.ingrediente));
+
+    res.status(200).json({ ingredientes });
+} catch (error) {
+    res.status(500).json({ error: 'Error al generar la lista de ingredientes' });
+}
+}
+
+module.exports = { obtener, asignar, quitar, listaIngredientes };
