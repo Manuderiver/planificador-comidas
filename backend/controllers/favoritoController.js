@@ -1,6 +1,6 @@
 const { Receta, Favorito } = require('../models');
 
-async function agregar(req, res) {
+async function agregar(req, res, next) {
 try {
     const receta = await Receta.findByPk(req.params.id);
     if (!receta) {
@@ -13,11 +13,11 @@ try {
 
     res.status(200).json({ message: 'Receta agregada a favoritos' });
 } catch (error) {
-    res.status(500).json({ error: 'Error al agregar a favoritos' });
+    next(error);
 }
 }
 
-async function quitar(req, res) {
+async function quitar(req, res, next) {
 try {
     const receta = await Receta.findByPk(req.params.id);
     if (!receta) {
@@ -30,7 +30,7 @@ try {
 
     res.status(200).json({ message: 'Receta quitada de favoritos' });
 } catch (error) {
-    res.status(500).json({ error: 'Error al quitar de favoritos' });
+    next(error);
 }
 }
 

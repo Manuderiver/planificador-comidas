@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const { PlanificadorSlot, Receta, Categoria, Ingrediente } = require('../models');
 const { DIAS, COMIDAS } = require('../utils/constantes');
 
-async function obtener(req, res) {
+async function obtener(req, res, next) {
 try {
     const slots = await PlanificadorSlot.findAll({
     where: { userId: req.user.id },
@@ -24,11 +24,11 @@ try {
 
     res.status(200).json({ semana });
 } catch (error) {
-    res.status(500).json({ error: 'Error al obtener el planificador' });
+    next(error);
 }
 }
 
-async function asignar(req, res) {
+async function asignar(req, res, next) {
 try {
     const { dia, comida } = req.params;
     const { recetaId } = req.body;
@@ -49,11 +49,11 @@ try {
 
     res.status(200).json({ message: 'Receta asignada correctamente' });
 } catch (error) {
-    res.status(500).json({ error: 'Error al asignar la receta' });
+    next(error);
 }
 }
 
-async function quitar(req, res) {
+async function quitar(req, res, next) {
 try {
     const { dia, comida } = req.params;
 
@@ -63,11 +63,11 @@ try {
 
     res.status(200).json({ message: 'Casillero vaciado correctamente' });
 } catch (error) {
-    res.status(500).json({ error: 'Error al vaciar el casillero' });
+    next(error);
 }
 }
 
-async function listaIngredientes(req, res) {
+async function listaIngredientes(req, res, next) {
 try {
     const slots = await PlanificadorSlot.findAll({
     where: { userId: req.user.id }
@@ -102,7 +102,7 @@ try {
 
     res.status(200).json({ ingredientes });
 } catch (error) {
-    res.status(500).json({ error: 'Error al generar la lista de ingredientes' });
+    next(error);
 }
 }
 

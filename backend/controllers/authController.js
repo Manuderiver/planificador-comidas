@@ -1,7 +1,7 @@
 const { User } = require('../models');
 const { generarToken } = require('../middleware/auth');
 
-const register = async (req, res) => {
+const register = async (req, res, next) => {
   try {
     const { nombre, email, password } = req.body;
 
@@ -11,31 +11,30 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'El email ya está registrado' });
     }
 
-const user = await User.create({ nombre, email, password });
+    const user = await User.create({ nombre, email, password });
 
-const token = generarToken(user);
+    const token = generarToken(user);
     res.status(201).json({
       message: 'Usuario registrado exitosamente',
       user,
       token
     });
   } catch (error) {
-    console.error('Error en register:', error);
-    res.status(500).json({ error: 'Error al registrar usuario' });
+    next(error);
   }
 };
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
-const passwordValida = await user.validarPassword(password);
+    const passwordValida = await user.validarPassword(password);
 
     if (!passwordValida) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
@@ -49,14 +48,13 @@ const passwordValida = await user.validarPassword(password);
       token
     });
   } catch (error) {
-    console.error('Error en login:', error);
-    res.status(500).json({ error: 'Error al iniciar sesión' });
+    next(error);
   }
 };
 
-const perfil = async (req, res) => {
+const perfil = async (req, res, next) => {
   try {
-const user = await User.findByPk(req.user.id);
+    const user = await User.findByPk(req.user.id);
 
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -64,8 +62,7 @@ const user = await User.findByPk(req.user.id);
 
     res.json({ user });
   } catch (error) {
-    console.error('Error en perfil:', error);
-    res.status(500).json({ error: 'Error al obtener perfil' });
+    next(error);
   }
 };
 

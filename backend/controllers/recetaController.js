@@ -1,7 +1,7 @@
 const { Op } = require('sequelize');
 const { sequelize, Receta, Categoria, Ingrediente, RecetaIngrediente, Favorito } = require('../models');
 
-async function crear(req, res) {
+async function crear(req, res, next) {
 const { nombre, descripcion, categoriaId, pasos, tiempoPreparacion, porciones, imagenUrl, ingredientes } = req.body;
 
 const transaction = await sequelize.transaction();
@@ -46,11 +46,11 @@ try {
     res.status(201).json({ message: 'Receta creada exitosamente', receta: recetaCompleta });
 } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: 'Error al crear la receta' });
+    next(error);
 }
 }
 
-async function listar(req, res) {
+async function listar(req, res, next) {
 try {
     const { categoriaId, busqueda, misRecetas, favoritas } = req.query;
     const where = {};
@@ -78,7 +78,6 @@ try {
     order: [['createdAt', 'DESC']]
     });
 
-    // Para marcar cuáles de estas recetas el usuario logueado tiene como favoritas
     const misFavoritos = await Favorito.findAll({
     where: { userId: req.user.id },
     attributes: ['recetaId']
@@ -93,11 +92,11 @@ try {
 
     res.status(200).json({ recetas: recetasConFavorito });
 } catch (error) {
-    res.status(500).json({ error: 'Error al obtener las recetas' });
+    next(error);
 }
 }
 
-async function obtener(req, res) {
+async function obtener(req, res, next) {
 try {
     const receta = await Receta.findByPk(req.params.id, {
     include: [{ model: Categoria, as: 'categoria' }, { model: Ingrediente }]
@@ -119,11 +118,11 @@ try {
     }
     });
 } catch (error) {
-    res.status(500).json({ error: 'Error al obtener la receta' });
+    next(error);
 }
 }
 
-async function actualizar(req, res) {
+async function actualizar(req, res, next) {
 const { nombre, descripcion, categoriaId, pasos, tiempoPreparacion, porciones, imagenUrl, ingredientes } = req.body;
 
 const transaction = await sequelize.transaction();
@@ -180,11 +179,11 @@ try {
     res.status(200).json({ message: 'Receta actualizada exitosamente', receta: recetaActualizada });
 } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: 'Error al actualizar la receta' });
+    next(error);
 }
 }
 
-async function eliminar(req, res) {
+async function eliminar(req, res, next) {
 try {
     const receta = await Receta.findByPk(req.params.id);
 
@@ -198,7 +197,7 @@ try {
     await receta.destroy();
     res.status(204).send();
 } catch (error) {
-    res.status(500).json({ error: 'Error al eliminar la receta' });
+    next(error);
 }
 }
 

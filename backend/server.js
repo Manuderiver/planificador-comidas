@@ -43,9 +43,17 @@ app.get('/health', (req, res) => {
 // Manejo de errores
 app.use((err, req, res, next) => {
   console.error(err.stack);
+
+  if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') {
+    return res.status(400).json({
+      error: 'Datos inválidos',
+      detalles: err.errors.map(e => ({ campo: e.path, mensaje: e.message }))
+    });
+  }
+
   res.status(500).json({
-    error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    error: 'Error interno del servidor',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
