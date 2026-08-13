@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret_por_defecto';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET no está definida en las variables de entorno. La aplicación no puede iniciar de forma segura sin ella.');
+}
 
 function generarToken(user) {
   return jwt.sign(
